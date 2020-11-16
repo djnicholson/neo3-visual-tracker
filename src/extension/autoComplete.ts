@@ -83,7 +83,7 @@ export default class AutoComplete {
     }
 
     for (const workspaceContract of Object.values(workspaceContracts)) {
-      const manifest = workspaceContract.manifest;
+      const manifest = workspaceContract.manifestJson;
       const contractHash = manifest.abi?.hash;
       const contractPath = workspaceContract.absolutePathToNef;
       if (contractHash) {

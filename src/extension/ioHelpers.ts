@@ -54,6 +54,10 @@ export default class IoHelpers {
     }
   }
 
+  static async enterPassword(prompt: string): Promise<string | undefined> {
+    return await vscode.window.showInputBox({ prompt, password: true });
+  }
+
   static async enterString(prompt: string): Promise<string | undefined> {
     return await vscode.window.showInputBox({ prompt });
   }

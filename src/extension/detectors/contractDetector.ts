@@ -1,4 +1,7 @@
-import { ContractManifestJson } from "@cityofzion/neon-core/lib/sc";
+import {
+  ContractManifest,
+  ContractManifestJson,
+} from "@cityofzion/neon-core/lib/sc";
 import fs from "fs";
 
 import DetectorBase from "./detectorBase";
@@ -8,7 +11,8 @@ const SEARCH_PATTERN = "**/*.nef";
 
 type ContractMap = {
   [contractHash: string]: {
-    manifest: Partial<ContractManifestJson>;
+    manifestJson: Partial<ContractManifestJson>;
+    manifest: ContractManifest;
     absolutePathToNef: string;
   };
 };
@@ -23,10 +27,17 @@ export default class ContractDetector extends DetectorBase {
   async processFiles() {
     const newSnapshot: ContractMap = {};
     for (const absolutePathToNef of this.files) {
-      const manifest = ContractDetector.tryGetManifest(absolutePathToNef);
-      if (manifest?.abi?.hash) {
-        const contractHash = manifest.abi.hash;
-        newSnapshot[contractHash] = { manifest, absolutePathToNef };
+      const manifestJson = ContractDetector.tryGetManifest(absolutePathToNef);
+      const manifest = ContractManifest.fromJson(
+        manifestJson as ContractManifestJson
+      );
+      if (manifestJson?.abi?.hash) {
+        const contractHash = manifestJson.abi.hash;
+        newSnapshot[contractHash] = {
+          manifestJson,
+          manifest,
+          absolutePathToNef,
+        };
       }
     }
     this.contracts = newSnapshot;

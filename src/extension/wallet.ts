@@ -1,5 +1,9 @@
 import * as fs from "fs";
 import * as neonCore from "@cityofzion/neon-core";
+import * as path from "path";
+import * as vscode from "vscode";
+
+import IoHelpers from "./ioHelpers";
 
 const LOG_PREFIX = "[Wallet]";
 
@@ -30,8 +34,41 @@ export default class Wallet {
     private readonly wallet: neonCore.wallet.Wallet
   ) {}
 
+  get accounts() {
+    return this.wallet.accounts;
+  }
+
   get addresses() {
     return this.wallet.accounts.map((_) => _.address);
+  }
+
+  async tryUnlockAccount(i: number) {
+    const account = this.accounts[i];
+    if (!account) {
+      return false;
+    }
+    try {
+      if (await this.wallet.decrypt(i, "")) {
+        return true;
+      }
+    } catch {}
+    const password = await IoHelpers.enterPassword(
+      `Enter the password for account #${i} (${
+        account.label
+      }) in wallet ${path.basename(this.path)}`
+    );
+    if (password) {
+      try {
+        if (await this.wallet.decrypt(i, password)) {
+          return true;
+        } else {
+          vscode.window.showErrorMessage("Incorrect password");
+        }
+      } catch {
+        vscode.window.showErrorMessage("Error decrypting account");
+      }
+    }
+    return false;
   }
 
   async tryUnlockWithoutPassword() {

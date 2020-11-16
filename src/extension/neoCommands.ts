@@ -5,8 +5,10 @@ import * as vscode from "vscode";
 
 import BlockchainIdentifier from "./blockchainIdentifier";
 import ContractDetector from "./detectors/contractDetector";
+import { deployContract } from "../neon-js-experimental/experimental";
 import IoHelpers from "./ioHelpers";
 import WalletDetector from "./detectors/walletDetector";
+import Networks from "../neon-js-experimental/networks";
 
 export default class NeoCommands {
   static async contractDeploy(
@@ -39,23 +41,28 @@ export default class NeoCommands {
     if (!wallet) {
       return;
     }
-    const walletAddresses = wallet.addresses;
-    if (!walletAddresses.length) {
+    const walletAccounts = wallet.accounts;
+    if (!walletAccounts.length) {
       return;
     }
-    let walletAddress: string | undefined = walletAddresses[0];
-    if (walletAddresses.length > 1) {
-      walletAddress = await IoHelpers.multipleChoice(
+    let selectedOption: string | undefined = "0";
+    if (walletAccounts.length > 1) {
+      selectedOption = await IoHelpers.multipleChoice(
         `Select an address from wallet ${path.basename(walletPath)}...`,
-        ...walletAddresses
+        ...walletAccounts.map((a, i) => `${i} - ${a.address} (${a.label})`)
       );
     }
-    if (!walletAddress) {
+    const walletAccountIndex = parseInt(selectedOption || "0");
+    const walletAccount = walletAccounts[walletAccountIndex];
+    if (!walletAccount) {
+      return;
+    }
+    if (!(await wallet.tryUnlockAccount(walletAccountIndex))) {
       return;
     }
     const contracts = contractDetector.contracts;
     const contractFile = await IoHelpers.multipleChoiceFiles(
-      `Deploy contract using ${walletAddress} (from ${path.basename(
+      `Deploy contract using ${walletAccount.address} (from ${path.basename(
         walletPath
       )})`,
       ...Object.values(contracts).map((_) => _.absolutePathToNef)
@@ -66,21 +73,22 @@ export default class NeoCommands {
     if (!contract) {
       return;
     }
-    let script = "";
+    let nef;
     try {
-      script = fs.readFileSync(contract.absolutePathToNef).toString("hex");
+      nef = Buffer.from(fs.readFileSync(contract.absolutePathToNef, null));
     } catch (e) {
       await vscode.window.showErrorMessage(
         `Could not read contract: ${contract.absolutePathToNef}`
       );
+      return;
     }
-    // const deployScript = neonJs.sc.generateDeployScript({
-    //   manifest: JSON.stringify(contract.manifest),
-    //   script,
-    // }).str;
-    await vscode.window.showInformationMessage(
-      `Coming soon: TestNet deployment/invocation`
-    );
+    const config = {
+      networkMagic: Networks.TestNet.ProtocolConfiguration.Magic,
+      rpcAddress: rpcUrl,
+      account: walletAccount,
+    };
+    const result = await deployContract(nef, contract.manifest, config);
+    await vscode.window.showInformationMessage(result);
   }
 
   static async createWallet() {
