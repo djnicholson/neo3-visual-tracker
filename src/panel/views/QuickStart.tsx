@@ -1,5 +1,6 @@
 import React from "react";
 
+import CreateContract from "../components/quickStart/CreateContract";
 import CreateNeoExpressInstance from "../components/quickStart/CreateNeoExpressInstance";
 import CreateOrOpenWorkspace from "../components/quickStart/CreateOrOpenWorkspace";
 import OpenBlockchainExplorer from "../components/quickStart/OpenBlockchainExplorer";
@@ -36,7 +37,19 @@ export default function QuickStart({ viewState, postMessage }: Props) {
         />
       );
     }
-    // TODO: Offer to create contracts, wallets, etc.
+    if (!viewState.hasContracts) {
+      actions.push(
+        <CreateContract
+          onCreate={() =>
+            postMessage({ command: "neo3-visual-devtracker.neo.newContract" })
+          }
+        />
+      );
+    }
+    // TODO: Offer to deploy if there is a non-deployed contract in the workspace
+    // TODO: Offer to create wallets if there is not one in the workspace
+    // TODO: Offer to create a checkpoint if neo-express is running and sufficiently "interesting"
+    // TODO: Offer to restore a checkpoint if any are present in the workspace
   } else {
     actions.push(
       <CreateOrOpenWorkspace
