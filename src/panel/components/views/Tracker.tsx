@@ -5,6 +5,7 @@ import BlockDetails from "../tracker/BlockDetails";
 import BlockList from "../tracker/BlockList";
 import BlockNavigation from "../tracker/BlockNavigation";
 import Dialog from "../Dialog";
+import InfiniteScroll from "../InfiniteScroll";
 import NavButton from "../NavButton";
 import Search from "../tracker/Search";
 import TrackerViewRequest from "../../../shared/messages/trackerViewRequest";
@@ -124,11 +125,18 @@ export default function Tracker({ viewState, postMessage }: Props) {
             </div>
           )}
           <div style={{ minHeight: "100vh" }}>
-            <BlockList
-              blocks={viewState.blocks}
-              selectedBlock={viewState.selectedBlock}
-              selectBlock={(hash) => postMessage({ selectBlock: hash })}
-            />
+            <InfiniteScroll
+              dataStartAt={viewState.startAtBlock}
+              setDataStartAt={(setStartAtBlock) =>
+                postMessage({ setStartAtBlock })
+              }
+            >
+              <BlockList
+                blocks={viewState.blocks}
+                selectedBlock={viewState.selectedBlock}
+                selectBlock={(hash) => postMessage({ selectBlock: hash })}
+              />
+            </InfiniteScroll>
           </div>
         </div>
         <BlockNavigation
